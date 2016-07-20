@@ -2,10 +2,19 @@ import socket
 import sys
 import argparse
 import os
-import urllib
+import urllib2
 import re
 
 REMOTE_SERVER = "www.google.com"
+
+hdrs = {
+    'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
+    'Accept-Encoding': 'none',
+    'Accept-Language': 'en-US,en;q=0.8',
+    'Connection': 'keep-alive'
+}
 
 def is_connected():
     try:
@@ -27,10 +36,20 @@ def parse_args():
     )
     args = parser.parse_args()
 
-def get_music_show(show_name):
-    show_page = str(urllib.urlopen("http://www.tunefind.com/show/"+show_name.lower().replace(" ","-")).read())
-    //seasons = list(re.findall(r'/season-', show_page))
+def get_season_songs(show_name, season):
+    season_link = "http://www.tunefind.com/show/" + show_name.lower().replace(" ","-") + "/season-1"
+    request = urllib2.Request(season_link, headers=hdrs);
+    songs_page = str(urllib2.urlopen(request).read())
+    season_songs_links = list(set(re.findall(r'/show/.*?'+season+r'/11005#songs', songs_page)))
+    print season_songs_links
 
+def get_music_show(show_name):
+    request = urllib2.Request("http://www.tunefind.com/show/"+show_name.lower().replace(" ","-"), headers=hdrs)
+    show_page = str(urllib2.urlopen(request).read())
+    seasons = list(set(re.findall(r'/season-[0-9]', show_page)))
+    seasons.sort()
+    for season in seasons:
+        get_season_songs(show_name, season)
 
 def get_music(show_name):
     get_music_show(show_name)
