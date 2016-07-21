@@ -2,9 +2,12 @@ import socket
 import sys
 import argparse
 import os
+import urllib
 import urllib2
 import re
 from bs4 import BeautifulSoup
+import youtube_dl
+from mechanize import Browser
 
 REMOTE_SERVER = "www.google.com"
 
@@ -40,6 +43,7 @@ def parse_args():
 url = "http://www.tunefind.com/"
 
 def get_season_songs(season, songs):
+    print season
     season_link = url + season
     request = urllib2.Request(season_link, headers=hdrs);
     episodes_page = str(urllib2.urlopen(request).read())
@@ -50,6 +54,19 @@ def get_season_songs(season, songs):
         soup = BeautifulSoup(songs_page, "html.parser")
         for link in soup.findAll('a', attrs={'class': 'SongTitle__link___2OQHD'}):
             songs.add(link.text)
+            # print link.text
+
+def get_song_links(show_name, songs, query_links):
+    for song in songs:
+        search_query = show_name + " " + song + " soundtrack"
+        # print search_query.replace(" ","+")
+        #request = urllib2.Request("https://www.youtube.com/search_query=" + search_query.replace(" ","+"), headers=hdrs)
+        query_links.append("https://www.youtube.com/results?search_query=" + search_query.replace(" ","+"))
+
+        '''
+        url = "https://www.youtube.com/watch?v=Y97u-U0nvJM"
+        os.system('youtube-dl -x --audio-format mp3 --prefer-ffmpeg %s' % url)
+        '''
 
 def get_music_show(show_name):
     request = urllib2.Request(url + 'show/' + show_name.lower().replace(" ", "-"), headers=hdrs)
@@ -60,7 +77,8 @@ def get_music_show(show_name):
     for season in seasons:
         get_season_songs(season, songs)
     songs = list(songs)
-    #print songs
+    query_links =[]
+    get_song_links(show_name, songs, query_links)
 
 def get_music(show_name):
     get_music_show(show_name)
