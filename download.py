@@ -4,6 +4,7 @@ import argparse
 import os
 import urllib2
 import re
+from bs4 import BeautifulSoup
 
 REMOTE_SERVER = "www.google.com"
 
@@ -36,20 +37,30 @@ def parse_args():
     )
     args = parser.parse_args()
 
-def get_season_songs(show_name, season):
-    season_link = "http://www.tunefind.com/show/" + show_name.lower().replace(" ","-") + "/season-1"
+url = "http://www.tunefind.com/"
+
+def get_season_songs(season, songs):
+    season_link = url + season
     request = urllib2.Request(season_link, headers=hdrs);
-    songs_page = str(urllib2.urlopen(request).read())
-    season_songs_links = list(set(re.findall(r'/show/.*?'+season+r'/11005#songs', songs_page)))
-    print season_songs_links
+    episodes_page = str(urllib2.urlopen(request).read())
+    episode_links = list(set(re.findall(season + '/\d+#songs', episodes_page)))
+    for episode_link in episode_links:
+        request = urllib2.Request(url + episode_link, headers=hdrs);
+        songs_page = str(urllib2.urlopen(request).read())
+        soup = BeautifulSoup(songs_page, "html.parser")
+        for link in soup.findAll('a', attrs={'class': 'SongTitle__link___2OQHD'}):
+            songs.add(link.text)
 
 def get_music_show(show_name):
-    request = urllib2.Request("http://www.tunefind.com/show/"+show_name.lower().replace(" ","-"), headers=hdrs)
+    request = urllib2.Request(url + 'show/' + show_name.lower().replace(" ", "-"), headers=hdrs)
     show_page = str(urllib2.urlopen(request).read())
-    seasons = list(set(re.findall(r'/season-[0-9]', show_page)))
+    seasons = list(set(re.findall(r'show/' + show_name.lower().replace(" ", "-") + r'/season-[0-9]', show_page)))
     seasons.sort()
+    songs = set()
     for season in seasons:
-        get_season_songs(show_name, season)
+        get_season_songs(season, songs)
+    songs = list(songs)
+    #print songs
 
 def get_music(show_name):
     get_music_show(show_name)
