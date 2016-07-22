@@ -6,7 +6,6 @@ import os
 import urllib2
 import re
 from bs4 import BeautifulSoup
-import youtube_dl
 
 REMOTE_SERVER = "www.google.com"
 
@@ -54,7 +53,16 @@ def get_season_songs(season, songs):
         for link in soup.findAll('a', attrs={'class': 'SongTitle__link___2OQHD'}):
             songs.add(link.text)
 
-def get_song_links(show_name, songs, query_links):
+def get_movie_songs(show_name, songs):
+    movie_link = url + show_name
+    print movie_link
+    request = urllib2.Request(movie_link, headers=hdrs)
+    songs_page = str(urllib2.urlopen(request).read())
+    soup = BeautifulSoup(songs_page, "html.parser")
+    for link in soup.findAll('a', attrs={'class': 'SongTitle__link___2OQHD'}):
+        songs.add(link.text)
+
+def get_song_links(songs, query_links):
     for song in songs:
         search_query = song + " soundtrack"
         query_links.append("https://www.youtube.com/results?search_query=" + search_query.replace(" ","+"))
@@ -72,12 +80,12 @@ def download(name, yt_ids):
         url = "https://www.youtube.com/watch?v=" + id
         print url
         curr_dir = os.getcwd()
-        os.chdir(name.title())
+        os.chdir(name.split('/')[1].title())
         os.system('youtube-dl -x --audio-format mp3 --prefer-ffmpeg %s' % url)
         os.chdir(curr_dir)
 
 def get_music_show(show_name):
-    request = urllib2.Request(url + 'show/' + show_name.lower().replace(" ", "-"), headers=hdrs)
+    request = urllib2.Request(url + show_name, headers=hdrs)
     show_page = str(urllib2.urlopen(request).read())
     seasons = list(set(re.findall(r'show/' + show_name.lower().replace(" ", "-") + r'/season-[0-9]', show_page)))
     seasons.sort()
@@ -86,22 +94,93 @@ def get_music_show(show_name):
         get_season_songs(season, songs)
     songs = list(songs)
     query_links =[]
-    get_song_links(show_name, songs, query_links)
+    get_song_links(songs, query_links)
+    yt_links = []
+    get_yt_links(query_links, yt_links)
+    download(show_name, yt_links)
+
+def get_music_movie(show_name):
+    songs = set()
+    get_movie_songs(show_name, songs)
+    songs = list(songs)
+    query_links = []
+    get_song_links(songs, query_links)
+    yt_links = []
+    get_yt_links(query_links, yt_links)
+    download(show_name, yt_links)
+
+def get_music_artist(show_name):
+    songs = set()
+    get_movie_songs(show_name, songs)
+    songs = list(songs)
+    query_links = []
+    get_song_links(songs, query_links)
     yt_links = []
     get_yt_links(query_links, yt_links)
     download(show_name, yt_links)
 
 def get_music(show_name):
-    get_music_show(show_name)
+    if show_name.split('/')[0] == 'show':
+        get_music_show(show_name)
+    elif show_name.split('/')[0] == 'movie':
+        get_music_movie(show_name)
+    elif show_name.split('/')[0] == 'artist':
+        get_music_artist(show_name)
 
 def main():
-    print "Download all the songs of a tv show or movie.\n"
+    print "Download songs of a tv show, movie or an artist.\n"
 
     while True:
-        print "Enter movie/show name :"
-        show_name = raw_input('> ')
+        print "Search Movie / Show / Artist :"
+        show_name = raw_input('\n> ')
+        print ''
 
-        directory = os.path.join(show_name.title())
+        if show_name is '':
+            print "Some Recommendations :\n"
+        else:
+            print "Search Results :\n"
+
+        index = int(1)
+        search_results = []
+        num_songs = []
+        request = urllib2.Request(url + "search/site?q=" + show_name.replace(" ", "+"), headers=hdrs);
+        search_page = str(urllib2.urlopen(request).read())
+        soup = BeautifulSoup(search_page, "html.parser")
+        for div in soup.findAll('div', attrs={'class': 'tf-search-results'}):
+            for link in div.findAll('a'):
+                search_results.append(link['href'].replace('/', '', 1))
+                index += 1
+
+            index = int(1)
+            for songs in div.findAll('p'):
+                num_songs.append(songs.get_text())
+                index += 1
+
+            index = int(1)
+            for i in range(len(search_results)):
+                print search_results[i].replace('', str(index) + '. ', 1).replace('/', ' => ', 1) + ' => ' + num_songs[i]
+                index += 1
+        print ''
+
+        if index == 1:
+            print "No Results Found! Search again!\n"
+            continue
+        if index == 2:
+            show_name = search_results[0]
+            flag = raw_input('Download? (y/n) : ')
+            if flag.lower() != 'y':
+                print ''
+                continue
+        else:
+            print 'Enter your choice (int) :'
+            inp = int(raw_input('\n> '))
+            if inp >= index:
+                print 'Out of range!\n'
+                continue
+            else:
+                show_name = search_results[inp-1]
+
+        directory = os.path.join(show_name.split('/')[1].title())
         if not os.path.exists(directory):
             os.makedirs(directory)
 
