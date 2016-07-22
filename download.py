@@ -72,7 +72,7 @@ def download(name, yt_ids):
         url = "https://www.youtube.com/watch?v=" + id
         print url
         curr_dir = os.getcwd()
-        os.chdir(name)
+        os.chdir(name.title())
         os.system('youtube-dl -x --audio-format mp3 --prefer-ffmpeg %s' % url)
         os.chdir(curr_dir)
 
@@ -101,7 +101,7 @@ def main():
         print "Enter movie/show name :"
         show_name = raw_input('> ')
 
-        directory = os.path.join(show_name)
+        directory = os.path.join(show_name.title())
         if not os.path.exists(directory):
             os.makedirs(directory)
 
