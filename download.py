@@ -1,13 +1,12 @@
+# -*- coding: utf-8 -*-
 import socket
 import sys
 import argparse
 import os
-import urllib
 import urllib2
 import re
 from bs4 import BeautifulSoup
 import youtube_dl
-from mechanize import Browser
 
 REMOTE_SERVER = "www.google.com"
 
@@ -54,19 +53,28 @@ def get_season_songs(season, songs):
         soup = BeautifulSoup(songs_page, "html.parser")
         for link in soup.findAll('a', attrs={'class': 'SongTitle__link___2OQHD'}):
             songs.add(link.text)
-            # print link.text
 
 def get_song_links(show_name, songs, query_links):
     for song in songs:
-        search_query = show_name + " " + song + " soundtrack"
-        # print search_query.replace(" ","+")
-        #request = urllib2.Request("https://www.youtube.com/search_query=" + search_query.replace(" ","+"), headers=hdrs)
+        search_query = song + " soundtrack"
         query_links.append("https://www.youtube.com/results?search_query=" + search_query.replace(" ","+"))
 
-        '''
-        url = "https://www.youtube.com/watch?v=Y97u-U0nvJM"
+def get_yt_links(query_links, yt_links):
+    for each_link in query_links:
+        request = urllib2.Request(each_link, headers=hdrs)
+        page = str(urllib2.urlopen(request).read())
+        link = re.findall(r'data-context-item-id="(.*?)"', page)[0]
+        if link != '__video_id__':
+            yt_links.append(link)
+
+def download(name, yt_ids):
+    for id in yt_ids:
+        url = "https://www.youtube.com/watch?v=" + id
+        print url
+        curr_dir = os.getcwd()
+        os.chdir(name)
         os.system('youtube-dl -x --audio-format mp3 --prefer-ffmpeg %s' % url)
-        '''
+        os.chdir(curr_dir)
 
 def get_music_show(show_name):
     request = urllib2.Request(url + 'show/' + show_name.lower().replace(" ", "-"), headers=hdrs)
@@ -79,6 +87,9 @@ def get_music_show(show_name):
     songs = list(songs)
     query_links =[]
     get_song_links(show_name, songs, query_links)
+    yt_links = []
+    get_yt_links(query_links, yt_links)
+    download(show_name, yt_links)
 
 def get_music(show_name):
     get_music_show(show_name)
