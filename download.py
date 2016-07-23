@@ -90,7 +90,7 @@ def get_music_show(show_name):
     seasons.sort()
     songs = set()
     for season in seasons:
-        print 'Fetching songs of ' + season.split('/')[2] + ' .. '
+        print 'Fetching songs of ' + show_name.split('/')[1] + ' ' + season.split('/')[2] + ' .. '
         get_season_songs(season, songs)
     print ''
     songs = list(songs)
@@ -101,16 +101,7 @@ def get_music_show(show_name):
     download(show_name, yt_links)
 
 def get_music_movie(show_name):
-    songs = set()
-    get_movie_songs(show_name, songs)
-    songs = list(songs)
-    query_links = []
-    get_song_links(songs, query_links)
-    yt_links = []
-    get_yt_links(query_links, yt_links)
-    download(show_name, yt_links)
-
-def get_music_artist(show_name):
+    print 'Fetching songs of ' + show_name.split('/')[1] + ' .. '
     songs = set()
     get_movie_songs(show_name, songs)
     songs = list(songs)
@@ -125,14 +116,12 @@ def get_music(show_name):
         get_music_show(show_name)
     elif show_name.split('/')[0] == 'movie':
         get_music_movie(show_name)
-    elif show_name.split('/')[0] == 'artist':
-        get_music_artist(show_name)
 
 def main():
-    print "Download songs of a tv show, movie or an artist.\n"
+    print "Download songs of a tv show or a movie.\n"
 
     while True:
-        print "Search Movie / Show / Artist :"
+        print "Search Movie / Show :"
         show_name = raw_input('\n> ')
         print ''
 
@@ -142,6 +131,7 @@ def main():
             print "Search Results :\n"
 
         index = int(1)
+        flag = int(0)
         search_results = []
         num_songs = []
         request = urllib2.Request(url + "search/site?q=" + show_name.replace(" ", "+"), headers=hdrs);
@@ -159,10 +149,15 @@ def main():
 
             index = int(1)
             for i in range(len(search_results)):
-                print search_results[i].replace('', str(index) + '. ', 1).replace('/', ' => ', 1) + ' => ' + num_songs[i]
+                if search_results[i].split('/')[0] == 'artist':
+                    index -= 1
+                elif search_results[i].split('/')[0] != 'artist':
+                    flag = 1
+                    print search_results[i].replace('', str(index) + '. ', 1).replace('/', ' => ', 1) + ' => ' + num_songs[i]
                 index += 1
-        print ''
 
+        if flag == 0:
+            index = 1
         if index == 1:
             print "No Results Found! Search again!\n"
             continue
@@ -173,7 +168,7 @@ def main():
                 print ''
                 continue
         else:
-            print 'Enter your choice (int) :'
+            print '\nEnter your choice (int) :'
             inp = int(raw_input('\n> '))
             if inp >= index:
                 print 'Out of range!\n'
