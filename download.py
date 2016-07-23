@@ -121,7 +121,7 @@ def main():
     print "Download songs of a tv show or a movie.\n"
 
     while True:
-        print "Search Movie / Show :"
+        print "Search Movie / Show : (Ctrl+z to exit)"
         show_name = raw_input('\n> ')
         print ''
 
