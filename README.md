@@ -40,5 +40,9 @@ $ pip install urllib2
 ```
 
 
+### Demo
+<div align="center"><img src="demo.gif" /></div>
+
+
 ### License
 MIT © Anshul Khanna
