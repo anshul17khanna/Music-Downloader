@@ -41,7 +41,6 @@ def parse_args():
 url = "http://www.tunefind.com/"
 
 def get_season_songs(season, songs):
-    print season
     season_link = url + season
     request = urllib2.Request(season_link, headers=hdrs);
     episodes_page = str(urllib2.urlopen(request).read())
@@ -55,7 +54,6 @@ def get_season_songs(season, songs):
 
 def get_movie_songs(show_name, songs):
     movie_link = url + show_name
-    print movie_link
     request = urllib2.Request(movie_link, headers=hdrs)
     songs_page = str(urllib2.urlopen(request).read())
     soup = BeautifulSoup(songs_page, "html.parser")
@@ -78,20 +76,23 @@ def get_yt_links(query_links, yt_links):
 def download(name, yt_ids):
     for id in yt_ids:
         url = "https://www.youtube.com/watch?v=" + id
-        print url
+        print 'id = ' + id
         curr_dir = os.getcwd()
         os.chdir(name.split('/')[1].title())
         os.system('youtube-dl -x --audio-format mp3 --prefer-ffmpeg %s' % url)
         os.chdir(curr_dir)
+        print ''
 
 def get_music_show(show_name):
     request = urllib2.Request(url + show_name, headers=hdrs)
     show_page = str(urllib2.urlopen(request).read())
-    seasons = list(set(re.findall(r'show/' + show_name.lower().replace(" ", "-") + r'/season-[0-9]', show_page)))
+    seasons = list(set(re.findall(show_name + r'/season-\d+', show_page)))
     seasons.sort()
     songs = set()
     for season in seasons:
+        print 'Fetching songs of ' + season.split('/')[2] + ' .. '
         get_season_songs(season, songs)
+    print ''
     songs = list(songs)
     query_links =[]
     get_song_links(songs, query_links)
